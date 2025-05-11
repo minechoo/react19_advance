@@ -4,7 +4,10 @@ const initialState = { isLight: true }
 
 // 전달된 action객체에 따라 전역 컨텍스트 변경하는 리듀서 함수
 function reducer(state, action){
-  if(action.isLight) return {isLight: action.isLight}
+  //action 객체의 isLight값의 불린형일때만 전역 상태값 변경
+  //그렇지 않으면 오류내용 출력
+  if(typeof action.isLight === 'boolean') return {isLight: action.isLight}
+  else console.error('액션객체에 isLight에는 참조형 자료가 전달되어야 합니다')
 }
 
 // 전역 컨텍스트 생성
