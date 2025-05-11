@@ -1,10 +1,11 @@
+import MovieList from "./Pages/MovieList";
 
 
 function App() {
 
   return (
     <>
-      <h1>React App</h1>
+      <MovieList />
     </>
   )
 }
