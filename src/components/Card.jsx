@@ -1,13 +1,15 @@
+import { Link } from "react-router-dom";
+
 export default function Card({data}) {
   return (
     <article>
-      <a href="">
+      <Link to={"/detail/" + data.id}>
         <img src={`https://image.tmdb.org/t/p/w200${data.poster_path}`} />
-      </a>
+      </Link>
       <h2>
-        <a href="/">
+        <Link to={"/detail/" + data.id }>
           {data.title}
-        </a>
+        </Link>
       </h2>
     </article>
   )
