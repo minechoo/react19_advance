@@ -1,44 +1,43 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 
 export default function App() {
-	const [Wid, setWid] = useState(0);
-	const refDiv = useRef(null);
+	const [InputValue, setInputValue] = useState('');
+	const [MovieData, setMovieData] = useState([]);
 
-	useEffect(() => {
-		//모션작업을 위해서 동적으로 UI 수치값을 변경해서 스타일 반영을 해야할때 변경로직을 useEffect안쪽에서 호출시
-		//이미 브라우저에 페인트가 된 이후 실행되기 때문에 화면이 깜박거리는 Layout shift 발생
-		//상태값 변경을 통해서 리액트가 랜더링되고 화면에 페이트된후 호출됨됨
-		const widSize = refDiv.current.getBoundingClientRect().width;
-		console.log(widSize);
-		setWid(widSize);
-	}, []);
+	//아래와 같이 복수개의 상태값을 동시에 변경처리할때 로직이 무겁고 시간이 오래걸리는 상태변경로직이 같이 있으면
+	//우선순위를 구분하지 않았을때 긴급하게 처리되야 되는 상태 업데이트까지 같이 늦어지면서 사용성에 악역향 발생
+	const handleChange = (e) => {
+		//실제 input에 반영되는 긴급 상태값
+		setInputValue(e.target.value);
 
-	useLayoutEffect(() => {
-		//상태값 변경을 통해서 리액트가 렌더링되고 화면에 페인트되기 직전에 호출됨
-		if (refDiv.current) {
-			const widSize = refDiv.current.getBoundingClientRect().width;
-			console.log('useLayoutEffect', widSize);
-			setWid(widSize);
+		const newData = [];
+		for (let i = 0; i < 10000000; i++) {
+			newData.push(i);
 		}
-	}, []);
+		// 실시간 반영할 필요가 없는 비 긴급 상태값
+		setMovieData(newData);
+	};
 
 	return (
 		<>
-			<div ref={refDiv} style={{ width: '50%', backgroundColor: 'orange', padding: '50px' }}>
-				해당 요소의 너비와 높이는 가변형
-			</div>
-			<p>{Wid}</p>
+			<h1>useTransition</h1>
+
+			<input type='text' value={InputValue} onChange={handleChange} />
 		</>
 	);
 }
+
 /*
-리액트 프로젝트가 구동되는 흐름
-1. 리액트 컴포넌트가 JSX를 반환
-2. 리액트 자체적으로 가상돔을 생성하면서 기존 돔 트리와 비교
-3. 변경된 부분이 반영된 실제 돔 트리 생성(리액트에서의 랜더링)
-4. 실제 브라우저가 변경된 돔트리 구조에 맞게 화면에 그림(layout계산, paint화면에 출력)
-   컴포넌트가 일단 랜더링된 이후 재호출되기 직전(useLayoutEffect)
-5. 이미 출력된 돔 트리의 내용을 다시 비교해서 추후 컴포넌트가 재 호출됨
-   컴포넌트가 랜더링된 이후 실행되는 시점(useEffect)
-6. 추가 작업을 통해 state값 기반으로 다시 재랜더링(1-3단계 반복)
+  useTransition
+  - 리액트 컴포넌트에 state값의 변경처리의 우선순위를 차등해서 긴급한 상태변경과, 덜 긴급한 상태변경사항을 관리하는 훅
+  - useTransition으로 상태 업데이트의 순서의 우선 순위를 차등 적용해야 되는 사례
+  - 폼요소에 입력값을 바탕으로 실시간으로 서버 데이터 호출 및 렌더링 해야될때
+
+  - 작업순서1-인풋에 검색어 입력 -> 인풋요소에 입력하고 있는 검색내용이 출력됨
+  - 작업순서2-인풋에 반영되고 있는 상태값에 따라 서버 데이터 fetching이나 기타 무거운 로직 수행
+  - 작업순서3로직수행이 완료되면 완료된 데이터를 다시 새로운 상태에 담아서 화면에 출력
+
+  위와 같은 순서의 작업을 할때 상태값이 2개 필요 (input출력용 상태값, 수행완료된 서버데이터를 화면에 출력용 상태값)
+  -input용 상태값은 로직처리가 무겁지 않고 화면에 바로바로 반영해야 되는 데이터 (Urgent Update) 긴급 변경필요 데이터
+  -서버 데이터 출력용 상태값은 로직처리가 무겁과 화면에 바로바로 출력할 필요가 없는 데이터 (Not Urgent Update) 비긴급 변경필요 데이터
 */
