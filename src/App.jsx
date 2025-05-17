@@ -1,32 +1,58 @@
-import { useDeferredValue } from 'react';
-import { useState } from 'react';
+//프론트에서 전달된 값을 서버에서 응답하는 로직을 흉내낸 함수
+
+import { useActionState } from 'react';
+
+//useActionState에 연결된 핸들러 함수의 파라미터 (초기 상태값, 폼안에 있는 모든 입력값들이 name값을 프로퍼티이름으로 해서 하나의 객체로 전달받아짐)
+async function serverResponse(prevState, formData) {
+	await new Promise((resolve) => setTimeout(resolve, 2000));
+
+	return {
+		message: `로그인 성공, ${formData.get('username')}님 반갑습니다.`,
+		username: formData.get('username'),
+		age: formData.get('age'),
+		gender: formData.get('gender'),
+	};
+}
 
 export default function App() {
-	const [InputValue, setInputValue] = useState('');
-	//useDeferredValue를 통해서 특정 상태값을 지연시켜서 새로운 상태값 생성
-	const deferredValue = useDeferredValue(InputValue);
-	//새로운 상태값을 활용해서 1만번 반복도는 무거운 로직을 일부러 실행
-	//이때 deferredValue로 상태값 반영자체가 지연되기 때문에 InputValue상태값이 바뀔때마다 해당 repeat함수가 바로바로 실행되는 것이아닌
-	//일정한 지연텀을 두면서 호출되므로 resultValue에 대한 재랜더링 처리는 줄어듬 (리액트의 렌더링 소비비용 감소)
-	const resultValue = deferredValue.repeat(10000);
-
-	const handleChange = (e) => {
-		setInputValue(e.target.value);
-	};
+	// [서버에서 응답된 상태값, 서버 상태값을 변경할수 있는 전용 함수] = useActionState(서버응답함수, 전달할 초기 상태값);
+	const [state, formAction] = useActionState(serverResponse, { message: '' });
+	console.log(state);
 
 	return (
 		<>
-			<h1>useTransition</h1>
-			<input type='text' value={InputValue} onChange={handleChange} />
-			<p>지연처리된 상태값 : {resultValue}</p>
+			<form action={formAction}>
+				<input type='text' name='username' placeholder='이름' />
+				<br />
+
+				<input type='text' name='age' placeholder='나이' />
+				<br />
+
+				<label htmlFor='male'>남성</label>
+				<input type='radio' name='gender' defaultValue='male' id='male' />
+				<label htmlFor='female'>여성</label>
+				<input type='radio' name='gender' defaultValue='female' id='female' />
+				<br />
+
+				<button type='reset'>취소</button>
+				<button type='submit'>전송</button>
+			</form>
+
+			<p>{state.message}</p>
 		</>
 	);
 }
+/*
+  useActionState의 이점
+  1. form요소에 바로 action을 통해서 서버쪽으로 클라이언트 데이터를 바로 전달 가능
+  2. 각 폼의 항목에 대응하는 state를 일일이 생성할 필요 없음
+  3. 서버 응답이 받아지면 useEffect나 fetch문 없이 바로 useActionState가 반환하는 값을 상태값을 전달 가능
+*/
 
 /*
-  useDeferredValue
-  - useTransition처럼 실제 상태값의 우선순위를 연산을 지연시키는 것이 아닌 특정 상태값의 사용을 지연시킴
-  - 물리적인 상태값 연산의 지연이 아닌 그냥 상태값 활용을 지연시키는 이유 -> 불필요한 렌더링 횟수 줄이기 위함
-  - useTransition이 복수개의 상태값중에서 특정 상태값의 연산자체를 지연시키는 만면
-  - useDefferedValue는 그냥 하나의 값의 사용자체를 지연시킴
+  useActionState
+  - 폼에서 제출되는 여러개의 상태값을 구조적으로 관리할 수 있게 해주는 훅
+  - 폼 항목마다 개별적으로 상태를 만들어서 관리하는 방식아닌 form안쪽의 모든 값들을 객체형태로 전달하고 전달 받는 형태
+  - 서버에서 응답하는 상태를 자동으로 관리가능
+  - 폼에 사용자 이름을 입력해서 전송하면 서버에서 응답후 응답된 값을 다시 컴포넌트에 받아서 화면에 출력 
 */
